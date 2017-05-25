@@ -26,7 +26,7 @@ class NavigationBuilderModule implements ModuleInterface
         ]);
 
         //Register view namespace
-        $registrator->configure('views', 'namespaces.spiral', 'spiral/navigation', [
+        $registrator->configure('views', 'namespaces', 'spiral/navigation', [
             "'navigation' => [",
             "directory('libraries') . 'spiral/navigation-builder/source/views/',",
             "/*{{namespaces.navigation}}*/",

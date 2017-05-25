@@ -43,6 +43,16 @@ class Builder
     }
 
     /**
+     * @param Domain $domain
+     */
+    public function deleteDomainTree(Domain $domain)
+    {
+        $this->orm->table(Tree::class)->delete()->where([
+            Tree::DOMAIN_ID => $domain->primaryKey()
+        ]);
+    }
+
+    /**
      * pick all links in one collection ($tree->getKeys())
      * walk trough
      *
@@ -57,9 +67,7 @@ class Builder
         }
 
         //data changed, truncate domain tree
-        $this->orm->table(Tree::class)->delete()->where([
-            Tree::DOMAIN_ID => $domain->primaryKey()
-        ]);
+        $this->deleteDomainTree($domain);
 
         $links = new KeysExtractor($data);
         $this->stack->setLinks($this->linkSource->find([

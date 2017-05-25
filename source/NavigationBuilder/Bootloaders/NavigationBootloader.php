@@ -9,15 +9,13 @@ use Spiral\NavigationBuilder\RendererInterface;
 
 class NavigationBootloader extends Bootloader
 {
-    const BOOT = true;
-
     /**
      * @var array
      */
     const SINGLETONS = [
         RendererInterface::class => DefaultRenderer::class,
         'navigation'             => Navigation::class,
-        'nav.default'            => [self::class, 'default']
+        'nav.default'            => [self::class, 'defaultNavigation']
     ];
 
     /**
@@ -29,7 +27,7 @@ class NavigationBootloader extends Bootloader
      * @param DefaultRenderer $renderer
      * @return Navigation
      */
-    public function default(Navigation $navigation, DefaultRenderer $renderer)
+    public function defaultNavigation(Navigation $navigation, DefaultRenderer $renderer)
     {
         $navigation->setRenderer($renderer);
 

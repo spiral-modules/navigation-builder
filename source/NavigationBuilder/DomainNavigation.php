@@ -66,11 +66,16 @@ class DomainNavigation
      */
     public function rebuild(Domain $domain)
     {
-        $this->cache->delete($this->treeCache($domain));
-        $this->cache->delete($this->htmlCache($domain));
+        $this->dropDomainCache($domain->name);
 
         $this->buildAndCacheTree($domain);
         $this->buildAndCacheHTML($domain);
+    }
+
+    public function dropDomainCache(string $domain)
+    {
+        $this->cache->delete($this->treeCache($domain));
+        $this->cache->delete($this->htmlCache($domain));
     }
 
     /**
@@ -118,7 +123,7 @@ class DomainNavigation
     protected function buildAndCacheTree(Domain $domain): array
     {
         $tree = $this->treeBuilder->build($domain);
-        $this->cache->set($this->treeCache($domain), $tree, self::LIFETIME);
+        $this->cache->set($this->treeCache($domain->name), $tree, self::LIFETIME);
 
         return $tree;
     }
@@ -130,26 +135,26 @@ class DomainNavigation
     protected function buildAndCacheHTML(Domain $domain): string
     {
         $html = $this->htmlBuilder->build($domain);
-        $this->cache->set($this->htmlCache($domain), $html, self::LIFETIME);
+        $this->cache->set($this->htmlCache($domain->name), $html, self::LIFETIME);
 
         return $html;
     }
 
     /**
-     * @param Domain $domain
+     * @param string $domain
      * @return string
      */
-    protected function htmlCache(Domain $domain): string
+    protected function htmlCache(string $domain): string
     {
-        return self::HTML_CACHE . '::' . $domain->name . '::' . get_class($this->renderer);
+        return self::HTML_CACHE . '::' . $domain . '::' . get_class($this->renderer);
     }
 
     /**
-     * @param Domain $domain
+     * @param string $domain
      * @return string
      */
-    protected function treeCache(Domain $domain): string
+    protected function treeCache(string $domain): string
     {
-        return self::TREE_CACHE . '::' . $domain->name . '::' . get_class($this->renderer);
+        return self::TREE_CACHE . '::' . $domain . '::' . get_class($this->renderer);
     }
 }

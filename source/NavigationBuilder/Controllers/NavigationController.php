@@ -6,6 +6,7 @@ use Spiral\Core\Controller;
 use Spiral\Core\Traits\AuthorizesTrait;
 use Spiral\Http\Request\InputManager;
 use Spiral\Http\Response\ResponseWrapper;
+use Spiral\NavigationBuilder\Database\Domain;
 use Spiral\NavigationBuilder\Database\Link;
 use Spiral\NavigationBuilder\Database\Sources\DomainSource;
 use Spiral\NavigationBuilder\Database\Sources\LinkSource;
@@ -57,6 +58,71 @@ class NavigationController extends Controller
         return [
             'status' => 200,
             'links'  => $service->getLinksList()
+        ];
+    }
+
+    /**
+     * Create domain by given name.
+     *
+     * @param DomainSource $source
+     * @return array
+     */
+    public function createDomainAction(DomainSource $source)
+    {
+        $this->allows('add');
+
+        $name = $this->input->data('name');
+        $domain = $source->findByName($name);
+
+        if (!empty($domain)) {
+            return [
+                'status' => 400,
+                'error'  => sprintf($this->say('Domain name "%s" is already taken.'), $name)
+            ];
+        }
+
+        return [
+            'status' => 200,
+            'domain' => [
+                'id'   => $domain->primaryKey(),
+                'name' => $domain->name
+            ]
+        ];
+    }
+
+    /**
+     * Delete domain by given id.
+     *
+     * @param string|int       $id
+     * @param DomainSource     $source
+     * @param Builder          $builder
+     * @param DomainNavigation $navigation
+     * @return array
+     */
+    public function deleteDomainAction(
+        $id,
+        DomainSource $source,
+        Builder $builder,
+        DomainNavigation $navigation
+    ) {
+        $this->allows('delete');
+
+        /** @var Domain $domain */
+        $domain = $source->findByPK($id);
+        if (empty($domain)) {
+            return [
+                'status' => 400,
+                'error'  => sprintf($this->say('No domain found by id "%s".'), $id)
+            ];
+        }
+
+        $builder->deleteDomainTree($domain);
+        $navigation->dropDomainCache($domain->name);
+        $domain->delete();
+
+        return [
+            'status'  => 200,
+            'message' => $this->say('Link deleted.')
         ];
     }
 
