@@ -2,9 +2,6 @@
 
 namespace Spiral\NavigationBuilder\Builders;
 
-use Spiral\NavigationBuilder\Database\Domain;
-use Spiral\NavigationBuilder\Database\Link;
-use Spiral\NavigationBuilder\Database\Tree;
 use Spiral\NavigationBuilder\DefaultRenderer;
 use Spiral\NavigationBuilder\RendererInterface;
 use Spiral\NavigationBuilder\Services\LinkWrapper;
@@ -23,14 +20,14 @@ class HtmlBuilder extends TreeBuilder
     }
 
     /**
-     * @param Domain $domain
+     * @param string $domain
      * @return string
      */
-    public function build(Domain $domain)
+    public function build(string $domain)
     {
-        $map = parent::build($domain);
+        $navigation = parent::build($domain);
 
-        return $this->renderer->navigation($map);
+        return $this->renderer->navigation($navigation);
     }
 
     /**
@@ -62,10 +59,10 @@ class HtmlBuilder extends TreeBuilder
     }
 
     /**
-     * @param Domain $domain
+     * @param string $domain
      * @return array
      */
-    protected function getTree(Domain $domain): array
+    protected function getTree(string $domain): array
     {
         return $this->source->findDomainTree($domain)->orderBy('order', 'ASC')->fetchData();
     }

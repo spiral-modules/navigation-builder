@@ -2,70 +2,86 @@
 
 namespace Spiral\NavigationBuilder\Database\Sources;
 
-use Spiral\Database\Entities\Database;
-use Spiral\NavigationBuilder\Database\Domain;
 use Spiral\NavigationBuilder\Database\Link;
 use Spiral\NavigationBuilder\Database\Tree;
 use Spiral\NavigationBuilder\Database\Types\TreeStatus;
 use Spiral\ORM\Entities\RecordSelector;
 use Spiral\ORM\Entities\RecordSource;
-use Spiral\ORM\ORMInterface;
 
 class TreeSource extends RecordSource
 {
     const RECORD = Tree::class;
 
     /**
-     * @param Domain $domain
+     * @param string $domain
      * @return RecordSelector
      */
-    public function findByDomain(Domain $domain): RecordSelector
+    public function findByDomain(string $domain): RecordSelector
     {
-        $query = [
-            Tree::DOMAIN_ID => $domain->primaryKey()
-        ];
-
-        return $this->find($query);
+        return $this->find(compact('domain'));
     }
 
     /**
-     * @param Domain $domain
+     * @param string $domain
      * @param bool   $publicOnly
      * @return RecordSelector
      */
-    public function findDomainTree(Domain $domain, bool $publicOnly = true): RecordSelector
+    public function findDomainTree(string $domain, bool $publicOnly = true): RecordSelector
     {
-        $query = [
-            Tree::DOMAIN_ID => $domain->primaryKey()
-        ];
+        $alias = 'links';
+        $query = compact('domain');
 
         if (!empty($publicOnly)) {
             $query['status'] = TreeStatus::ACTIVE;
         }
 
         return $this->find($query)
-            ->with('link', ['alias' => 'tree_link'])
-            ->load('link', ['using' => 'tree_link']);
+            ->with('link', ['alias' => $alias])
+            ->load('link', ['using' => $alias]);
     }
 
     /**
-     * @param Domain $domain
-     * @param        $linkID
-     * @param null   $parentID
-     * @return null|Tree
+     * @param string    $domain
+     * @param int       $depth
+     * @param int       $order
+     * @param string    $status
+     * @param Link      $link
+     * @param Link|null $parentLink
+     * @param Tree|null $parent
+     * @return Tree
      */
-//    public function findOneByDomainAndLink(Domain $domain, $linkID, $parentID = null)
-//    {
-//        $query = [
-//            Tree::LINK_ID   => $linkID,
-//            Tree::DOMAIN_ID => $domain->primaryKey(),
-//            'status'        => TreeStatus::ACTIVE
-//        ];
-//
-//        if (!empty($parentID)) {
-//            $query[Tree::PARENT_ID] = $parentID;
-//        }
-//
-//        return $this->findOne($query);
-//    }
+    public function createFromBuilder(
+        string $domain,
+        int $depth,
+        int $order,
+        string $status,
+        Link $link,
+        Link $parentLink = null,
+        Tree $parent = null
+    ): Tree
+    {
+        $tree = new Tree();
+        $tree->domain = $domain;
+        $tree->depth = $depth;
+        $tree->order = $order;
+
+        if (!empty($status)) {
+            $tree->status->setValue($status);
+        }
+
+        $tree->link = $link;
+        if (!empty($parentLink)) {
+            $tree->parentLink = $parentLink;
+        }
+        if (!empty($parent)) {
+            $tree->parent = $parent;
+            $tree->type->setChild();
+        } else {
+            $tree->type->setParent();
+        }
+
+        $tree->save();
+
+        return $tree;
+    }
 }

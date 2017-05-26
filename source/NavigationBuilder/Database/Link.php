@@ -2,16 +2,19 @@
 namespace Spiral\NavigationBuilder\Database;
 
 use Spiral\NavigationBuilder\Services\LinkWrapper;
+use Spiral\ORM\Entities\Relations\HasManyRelation;
 use Spiral\ORM\Record;
 
 /**
  * Class Link
  *
  * @package Spiral\NavigationBuilder\Database
- * @property string $text
- * @property string $href
- * @property string $name
- * @property string $attributes
+ * @property string               $text
+ * @property string               $href
+ * @property string               $name
+ * @property string               $attributes
+ * @property HasManyRelation|Tree $tree
+ * @property HasManyRelation|Tree $childrenTree
  */
 class Link extends Record
 {
@@ -26,10 +29,7 @@ class Link extends Record
         'count_usages'  => 'int',
     ];
 
-    const FILLABLE = [
-        'text',
-        'href'
-    ];
+    const FILLABLE = ['text', 'href'];
 
     /**
      * @param array $value
@@ -45,14 +45,5 @@ class Link extends Record
     public function getAttributes(): array
     {
         return LinkWrapper::unpackAttributes($this->attributes);
-    }
-
-    /**
-     * @param string $value
-     * @return array
-     */
-    public static function attributes(string $value): array
-    {
-        return (array)json_decode($value, true);
     }
 }

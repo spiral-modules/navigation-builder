@@ -26,9 +26,9 @@ class LinkRequest extends RequestFilter
 
     /**
      * @param string $value
-     * @return array
+     * @return string
      */
-    public static function trimHref(string $value): array
+    public static function trimHref(string $value): string
     {
         $value = trim($value, ' /');
         if (stripos($value, 'http://') === 0 || stripos($value, 'https://') === 0) {
@@ -57,7 +57,10 @@ class LinkRequest extends RequestFilter
         return $output;
     }
 
-    public function getAttributes()
+    /**
+     * @return array
+     */
+    public function getAttributes(): array
     {
         return $this->attributes;
     }

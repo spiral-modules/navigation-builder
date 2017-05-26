@@ -14,7 +14,18 @@ class Config extends InjectableConfig
     protected $config = [
         'navigation' => 'tree',
         'link'       => 'link',
+        'domains'    => ['default']
     ];
+
+    /**
+     * List of domains.
+     *
+     * @return array
+     */
+    public function domains(): array
+    {
+        return $this->config['domains'];
+    }
 
     /**
      * What view file renders full navigation tree.

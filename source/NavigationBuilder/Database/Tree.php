@@ -10,32 +10,28 @@ use Spiral\ORM\Record;
  * Class Tree
  *
  * @package Spiral\NavigationBuilder\Database
- * @property int                      $depth
- * @property int                      $order
- * @property TreeStatus               $status
- * @property TreeType                 $type
- * @property BelongsToRelation|Domain $domain
- * @property BelongsToRelation|Link   $link
- * @property BelongsToRelation|Tree   $parent
- * @property BelongsToRelation|Link   $parentLink
+ * @property string                 $domain
+ * @property int                    $depth
+ * @property int                    $order
+ * @property TreeStatus             $status
+ * @property TreeType               $type
+ * @property BelongsToRelation|Link $link
+ * @property BelongsToRelation|Tree $parent
+ * @property BelongsToRelation|Link $parentLink
  */
 class Tree extends Record
 {
     const DATABASE = 'navigation';
 
-    const DOMAIN_ID      = 'domain_id';
     const LINK_ID        = 'link_id';
     const PARENT_ID      = 'parent_id';
     const PARENT_LINK_ID = 'parent_link_id';
-    const SCHEMA         = [
+
+    const SCHEMA = [
         'id'         => 'primary',
         'type'       => TreeType::class,   //has parent - is a child, otherwise is a parent
         'status'     => TreeStatus::class, //allows to hide link
-        'domain'     => [
-            self::BELONGS_TO => Domain::class,
-            self::INNER_KEY  => self::DOMAIN_ID,
-            Domain::INVERSE  => [Domain::HAS_MANY, 'tree']
-        ],
+        'domain'     => 'string',
         'link'       => [
             self::BELONGS_TO => Link::class,
             self::INNER_KEY  => self::LINK_ID,

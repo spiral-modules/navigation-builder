@@ -3,11 +3,10 @@
 namespace Spiral\NavigationBuilder\Services;
 
 use Spiral\Database\Injections\Parameter;
-use Spiral\NavigationBuilder\Database\Domain;
-use Spiral\NavigationBuilder\Database\Link;
 use Spiral\NavigationBuilder\Database\Sources\LinkSource;
+use Spiral\NavigationBuilder\Database\Sources\TreeSource;
 use Spiral\NavigationBuilder\Database\Tree;
-use Spiral\NavigationBuilder\DomainNavigation;
+use Spiral\NavigationBuilder\Navigation;
 use Spiral\NavigationBuilder\Services\Builder\Stack;
 use Spiral\NavigationBuilder\Services\Builder\KeysExtractor;
 use Spiral\ORM\ORM;
@@ -17,10 +16,13 @@ class Builder
     /** @var LinkSource */
     private $linkSource;
 
+    /** @var TreeSource */
+    private $treeSource;
+
     /** @var ORM */
     private $orm;
 
-    /** @var DomainNavigation */
+    /** @var Navigation */
     private $domains;
 
     /** @var Stack */
@@ -29,13 +31,19 @@ class Builder
     /**
      * Builder constructor.
      *
-     * @param LinkSource       $linkSource
-     * @param ORM              $orm
-     * @param DomainNavigation $domains
+     * @param LinkSource $linkSource
+     * @param TreeSource $treeSource
+     * @param ORM        $orm
+     * @param Navigation $domains
      */
-    public function __construct(LinkSource $linkSource, ORM $orm, DomainNavigation $domains)
-    {
+    public function __construct(
+        LinkSource $linkSource,
+        TreeSource $treeSource,
+        ORM $orm,
+        Navigation $domains
+    ) {
         $this->linkSource = $linkSource;
+        $this->treeSource = $treeSource;
         $this->orm = $orm;
         $this->domains = $domains;
 
@@ -43,42 +51,31 @@ class Builder
     }
 
     /**
-     * @param Domain $domain
-     */
-    public function deleteDomainTree(Domain $domain)
-    {
-        $this->orm->table(Tree::class)->delete()->where([
-            Tree::DOMAIN_ID => $domain->primaryKey()
-        ]);
-    }
-
-    /**
-     * pick all links in one collection ($tree->getKeys())
-     * walk trough
+     * Creates db tree records based on passed tree from builder UI.
+     * Store generated tree html in cache.
      *
-     * @param Domain $domain
+     * @param string $domain
      * @param array  $data
      */
-    public function saveStructure(Domain $domain, array $data)
+    public function saveStructure(string $domain, array $data)
     {
         //data is same, no changes
-        if ($data == $this->domains->getTree($domain)) {
+        if ($data == $this->domains->getTree($domain, false)) {
             return;
         }
 
         //data changed, truncate domain tree
         $this->deleteDomainTree($domain);
 
+        //load all links from db
         $links = new KeysExtractor($data);
         $this->stack->setLinks($this->linkSource->find([
             'id' => ['IN' => new Parameter($links->getKeys())]
         ]));
 
-        $this->recursiveCreateTree($domain, $data, 1);
+        //Creates db tree records based on passed tree from builder UI
+        $this->createTree($domain, $data, 1);
         $this->domains->rebuild($domain);
-
-        $domain->count_links = count($this->stack->getTreeKeys());
-        $domain->save();
 
 //todo, done, but need to count domains also
 //        $query = $this->linkSource->findWithTree()->where([
@@ -95,14 +92,24 @@ class Builder
     }
 
     /**
-     * @param Domain $domain
+     * Truncate domain tree records.
+     *
+     * @param string $domain
+     */
+    private function deleteDomainTree(string $domain)
+    {
+        $this->orm->table(Tree::class)->delete()->where(compact('domain'));
+    }
+
+    /**
+     * @param string $domain
      * @param array  $data
      * @param int    $depth
      * @param null   $parentLinkID
      * @param null   $parentTreeID
      */
-    private function recursiveCreateTree(
-        Domain $domain,
+    private function createTree(
+        string $domain,
         array $data,
         int $depth,
         $parentLinkID = null,
@@ -129,7 +136,7 @@ class Builder
                 continue;
             }
 
-            $tree = $this->makeTreeRecord(
+            $tree = $this->treeSource->createFromBuilder(
                 $domain,
                 $depth,
                 $order,
@@ -141,7 +148,7 @@ class Builder
             $this->stack->addTree($tree);
 
             if (!empty($item['sub']) && is_array($item['sub'])) {
-                $this->recursiveCreateTree(
+                $this->createTree(
                     $domain,
                     $item['sub'],
                     $depth + 1,
@@ -152,50 +159,5 @@ class Builder
 
             $order++;
         }
-    }
-
-    /**
-     * @param Domain    $domain
-     * @param int       $depth
-     * @param int       $order
-     * @param string    $status
-     * @param Link      $link
-     * @param Link|null $parentLink
-     * @param Tree|null $parent
-     * @return Tree
-     */
-    private function makeTreeRecord(
-        Domain $domain,
-        int $depth,
-        int $order,
-        string $status,
-        Link $link,
-        Link $parentLink = null,
-        Tree $parent = null
-    ): Tree
-    {
-        $tree = new Tree();
-        $tree->domain = $domain;
-        $tree->depth = $depth;
-        $tree->order = $order;
-
-        if (!empty($status)) {
-            $tree->status->setValue($status);
-        }
-
-        $tree->link = $link;
-        if (!empty($parentLink)) {
-            $tree->parentLink = $parentLink;
-        }
-        if (!empty($parent)) {
-            $tree->parent = $parent;
-            $tree->type->setChild();
-        } else {
-            $tree->type->setParent();
-        }
-
-        $tree->save();
-
-        return $tree;
     }
 }

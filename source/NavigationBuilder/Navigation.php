@@ -2,31 +2,52 @@
 
 namespace Spiral\NavigationBuilder;
 
-use Spiral\NavigationBuilder\Database\Sources\DomainSource;
+use Spiral\NavigationBuilder\Builders\HtmlBuilder;
+use Spiral\NavigationBuilder\Builders\TreeBuilder;
 
+/**
+ * Layer with caching and rebuilding tree/html.
+ * Class DomainNavigation
+ *
+ * @package Spiral\NavigationBuilder
+ */
 class Navigation
 {
-    /** @var DomainSource */
-    private $source;
+    const TREE_CACHE = 'navigation::tree';
+    const HTML_CACHE = 'navigation::html';
+    const LIFETIME   = 86400 * 365 * 10; // 10 years is enough
 
-    /** @var DomainNavigation */
-    private $builders;
+    /** @var TreeBuilder */
+    private $treeBuilder;
+
+    /** @var HtmlBuilder */
+    private $htmlBuilder;
+
+    /** @var RendererInterface */
+    private $renderer;
+
+    /** @var Storage */
+    private $storage;
 
     /**
-     * Navigation constructor.
+     * DomainNavigation constructor.
      *
-     * @param DomainSource      $source
-     * @param DomainNavigation  $domains
+     * @param TreeBuilder       $treeBuilder
+     * @param HtmlBuilder       $htmlBuilder
      * @param RendererInterface $renderer
+     * @param Storage           $storage
      */
     public function __construct(
-        DomainSource $source,
-        DomainNavigation $domains,
-        RendererInterface $renderer
+        TreeBuilder $treeBuilder,
+        HtmlBuilder $htmlBuilder,
+        RendererInterface $renderer,
+        Storage $storage
     ) {
-        $this->source = $source;
-        $this->builders = $domains;
-        $this->builders->setRenderer($renderer);
+        $this->treeBuilder = $treeBuilder;
+        $this->htmlBuilder = $htmlBuilder;
+        $this->storage = $storage;
+
+        $this->setRenderer($renderer);
     }
 
     /**
@@ -34,38 +55,80 @@ class Navigation
      */
     public function setRenderer(RendererInterface $renderer)
     {
-        $this->builders->setRenderer($renderer);
+        $this->renderer = $renderer;
+        $this->htmlBuilder->setRenderer($renderer);
     }
 
     /**
-     * @param string $name
-     * @param  bool  $cache
-     * @param string $default
+     * @param string $domain
+     */
+    public function rebuild(string $domain)
+    {
+        $this->storage->dropDomainCache($domain, $this->renderer);
+
+        $this->buildAndCacheTree($domain);
+        $this->buildAndCacheHTML($domain);
+    }
+
+    /**
+     * @param string $domain
+     * @param bool   $cache
      * @return string
      */
-    public function getHTML(string $name, bool $cache = true, $default = ''): string
+    public function getHTML(string $domain, bool $cache = true): string
     {
-        $domain = $this->source->findByName($name);
-        if (empty($domain)) {
-            return $default;
+        if (empty($cache)) {
+            return $this->htmlBuilder->build($domain);
         }
 
-        return $this->builders->getHTML($domain, $cache);
+        $html = $this->storage->getHtmlCache($domain, $this->renderer);
+        if (empty($html)) {
+            $html = $this->buildAndCacheHTML($domain);
+        }
+
+        return $html;
     }
 
     /**
-     * @param string $name
-     * @param  bool  $cache
-     * @param array  $default
+     * @param string $domain
+     * @param bool   $cache
      * @return array
      */
-    public function getTree(string $name, bool $cache = true, $default = []): array
+    public function getTree(string $domain, bool $cache = true): array
     {
-        $domain = $this->source->findByName($name);
-        if (empty($domain)) {
-            return $default;
+        if (empty($cache)) {
+            return $this->treeBuilder->build($domain);
         }
 
-        return $this->builders->getTree($domain, $cache);
+        $tree = $this->storage->getTreeCache($domain);
+        if (empty($tree)) {
+            $tree = $this->buildAndCacheTree($domain);
+        }
+
+        return $tree;
+    }
+
+    /**
+     * @param string $domain
+     * @return array
+     */
+    protected function buildAndCacheTree(string $domain): array
+    {
+        $tree = $this->treeBuilder->build($domain);
+        $this->storage->setTreeCache($domain, $tree);
+
+        return $tree;
+    }
+
+    /**
+     * @param string $domain
+     * @return string
+     */
+    protected function buildAndCacheHTML(string $domain): string
+    {
+        $html = $this->htmlBuilder->build($domain);
+        $this->storage->setHtmlCache($domain, $this->renderer, $html);
+
+        return $html;
     }
 }

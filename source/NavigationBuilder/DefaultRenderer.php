@@ -3,7 +3,6 @@
 namespace Spiral\NavigationBuilder;
 
 use Spiral\Core\Service;
-use Spiral\NavigationBuilder\Database\Link;
 use Spiral\Views\ViewManager;
 
 class DefaultRenderer extends Service implements RendererInterface

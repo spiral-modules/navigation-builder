@@ -6,17 +6,17 @@ use Spiral\Core\Controller;
 use Spiral\Core\Traits\AuthorizesTrait;
 use Spiral\Http\Request\InputManager;
 use Spiral\Http\Response\ResponseWrapper;
-use Spiral\NavigationBuilder\Database\Domain;
+use Spiral\NavigationBuilder\Config;
 use Spiral\NavigationBuilder\Database\Link;
-use Spiral\NavigationBuilder\Database\Sources\DomainSource;
 use Spiral\NavigationBuilder\Database\Sources\LinkSource;
 use Spiral\NavigationBuilder\Database\Sources\TreeSource;
 use Spiral\NavigationBuilder\Database\Tree;
-use Spiral\NavigationBuilder\DomainNavigation;
+use Spiral\NavigationBuilder\Navigation;
 use Spiral\NavigationBuilder\Requests\LinkRequest;
 use Spiral\NavigationBuilder\Services\Builder;
+use Spiral\NavigationBuilder\Services\DomainService;
 use Spiral\NavigationBuilder\Services\LinkWrapper;
-use Spiral\NavigationBuilder\Services\VaultService;
+use Spiral\NavigationBuilder\Services\LinkService;
 use Spiral\Translator\Traits\TranslatorTrait;
 use Spiral\Views\ViewManager;
 
@@ -37,107 +37,41 @@ class NavigationController extends Controller
     /**
      * Builder view page.
      *
-     * @param VaultService $service
+     * @param Config $config
      * @return string
      */
-    public function indexAction(VaultService $service)
+    public function indexAction(Config $config)
     {
         return $this->views->render('navigation:vault/list', [
-            'domains' => $service->getDomainsList()
+            'domains' => $config->domains()
         ]);
     }
 
     /**
      * Return all links list.
      *
-     * @param VaultService $service
+     * @param LinkService $service
      * @return array
      */
-    public function getLinksAction(VaultService $service)
+    public function getLinksAction(LinkService $service)
     {
         return [
             'status' => 200,
-            'links'  => $service->getLinksList()
-        ];
-    }
-
-    /**
-     * Create domain by given name.
-     *
-     * @param DomainSource $source
-     * @return array
-     */
-    public function createDomainAction(DomainSource $source)
-    {
-        $this->allows('add');
-
-        $name = $this->input->data('name');
-        $domain = $source->findByName($name);
-
-        if (!empty($domain)) {
-            return [
-                'status' => 400,
-                'error'  => sprintf($this->say('Domain name "%s" is already taken.'), $name)
-            ];
-        }
-
-        return [
-            'status' => 200,
-            'domain' => [
-                'id'   => $domain->primaryKey(),
-                'name' => $domain->name
-            ]
-        ];
-    }
-
-    /**
-     * Delete domain by given id.
-     *
-     * @param string|int       $id
-     * @param DomainSource     $source
-     * @param Builder          $builder
-     * @param DomainNavigation $navigation
-     * @return array
-     */
-    public function deleteDomainAction(
-        $id,
-        DomainSource $source,
-        Builder $builder,
-        DomainNavigation $navigation
-    ) {
-        $this->allows('delete');
-
-        /** @var Domain $domain */
-        $domain = $source->findByPK($id);
-        if (empty($domain)) {
-            return [
-                'status' => 400,
-                'error'  => sprintf($this->say('No domain found by id "%s".'), $id)
-            ];
-        }
-
-        $builder->deleteDomainTree($domain);
-        $navigation->dropDomainCache($domain->name);
-        $domain->delete();
-
-        return [
-            'status'  => 200,
-            'message' => $this->say('Link deleted.')
+            'links'  => $service->getList()
         ];
     }
 
     /**
      * Get domain links tree by its name($id).
      *
-     * @param string|int       $id
-     * @param DomainNavigation $navigation
-     * @param DomainSource     $source
+     * @param string|int    $id
+     * @param Navigation    $navigation
+     * @param DomainService $service
      * @return array
      */
-    public function domainTreeAction($id, DomainNavigation $navigation, DomainSource $source)
+    public function domainTreeAction($id, Navigation $navigation, DomainService $service)
     {
-        $domain = $source->findByName($id);
-        if (empty($domain)) {
+        if (!$service->domainExists($id)) {
             return [
                 'status' => 400,
                 'error'  => sprintf($this->say('No domain found by name "%s".'), $id)
@@ -148,7 +82,7 @@ class NavigationController extends Controller
 
         return [
             'status' => 200,
-            'links'  => $navigation->getTree($domain, $cache)
+            'links'  => $navigation->getTree($id, $cache)
         ];
     }
 
@@ -157,9 +91,10 @@ class NavigationController extends Controller
      *
      * @param LinkRequest $request
      * @param LinkWrapper $wrapper
+     * @param LinkSource  $source
      * @return array
      */
-    public function createLinkAction(LinkRequest $request, LinkWrapper $wrapper)
+    public function createLinkAction(LinkRequest $request, LinkWrapper $wrapper, LinkSource $source)
     {
         $this->allows('add');
 
@@ -170,10 +105,7 @@ class NavigationController extends Controller
             ];
         }
 
-        $link = new Link();
-        $link->setFields($request);
-        $link->setAttributes($request->getAttributes());
-        $link->save();
+        $link = $source->createFromRequest($request);
 
         return [
             'status' => 200,
@@ -184,19 +116,28 @@ class NavigationController extends Controller
     /**
      * Delete link by its id.
      *
-     * @param string|int $id
-     * @param LinkSource $source
+     * @param string|int  $id
+     * @param LinkSource  $source
+     * @param LinkService $service
      * @return array
      */
-    public function deleteLinkAction($id, LinkSource $source)
+    public function deleteLinkAction($id, LinkSource $source, LinkService $service)
     {
         $this->allows('delete');
 
+        /** @var Link $link */
         $link = $source->findByPK($id);
         if (empty($link)) {
             return [
                 'status' => 400,
                 'error'  => sprintf($this->say('No link found by id "%s".'), $id)
+            ];
+        }
+
+        if (!$service->deleteAllowed($link)) {
+            return [
+                'status' => 400,
+                'error'  => $this->say('Can\'t delete, remove from all domain trees first.')
             ];
         }
 
@@ -257,12 +198,14 @@ class NavigationController extends Controller
      * @param string|int  $id
      * @param LinkSource  $source
      * @param LinkWrapper $wrapper
+     * @param LinkService $service
      * @return array
      */
     public function copyLinkAction(
         $id,
         LinkSource $source,
-        LinkWrapper $wrapper
+        LinkWrapper $wrapper,
+        LinkService $service
     ) {
         $this->allows('add');
 
@@ -275,11 +218,7 @@ class NavigationController extends Controller
             ];
         }
 
-        $copy = new Link();
-        $copy->text = $link->text;
-        $copy->href = $link->href;
-        $copy->attributes = $link->attributes;
-        $copy->save();
+        $copy = $service->createCopy($link);
 
         return [
             'status' => 200,
@@ -329,33 +268,32 @@ class NavigationController extends Controller
     /**
      * Save domain navigation tree.
      *
-     * @param string|int       $id
-     * @param DomainSource     $source
-     * @param Builder          $builder
-     * @param DomainNavigation $navigation
+     * @param string|int    $id
+     * @param Builder       $builder
+     * @param Navigation    $navigation
+     * @param DomainService $service
      * @return array
      */
     public function saveAction(
         $id,
-        DomainSource $source,
         Builder $builder,
-        DomainNavigation $navigation
+        Navigation $navigation,
+        DomainService $service
     ) {
         $this->allows('update');
 
-        $domain = $source->findByName($id);
-        if (empty($domain)) {
+        if (!$service->domainExists($id)) {
             return [
                 'status' => 400,
                 'error'  => sprintf($this->say('No domain found by name "%s".'), $id)
             ];
         }
 
-        $builder->saveStructure($domain, $this->input->data('tree'));
+        $builder->saveStructure($id, $this->input->data('tree'));
 
         return [
             'status' => 200,
-            'links'  => $navigation->getTree($domain)
+            'links'  => $navigation->getTree($id)
         ];
     }
 }

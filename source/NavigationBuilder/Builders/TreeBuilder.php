@@ -2,7 +2,6 @@
 
 namespace Spiral\NavigationBuilder\Builders;
 
-use Spiral\NavigationBuilder\Database\Domain;
 use Spiral\NavigationBuilder\Database\Sources\TreeSource;
 use Spiral\NavigationBuilder\Database\Tree;
 
@@ -22,10 +21,10 @@ class TreeBuilder
     }
 
     /**
-     * @param Domain $domain
+     * @param string $domain
      * @return array
      */
-    public function build(Domain $domain)
+    public function build(string $domain)
     {
         $map = [];
         foreach ($this->getTree($domain) as $item) {
@@ -65,10 +64,10 @@ class TreeBuilder
     }
 
     /**
-     * @param Domain $domain
+     * @param string $domain
      * @return array
      */
-    protected function getTree(Domain $domain): array
+    protected function getTree(string $domain): array
     {
         return $this->source->findByDomain($domain)->orderBy('order', 'ASC')->fetchData();
     }

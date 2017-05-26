@@ -84,12 +84,4 @@ class Stack
 
         return $this->tree[$id];
     }
-
-    /**
-     * @return array
-     */
-    public function getTreeKeys(): array
-    {
-        return array_keys($this->tree);
-    }
 }
