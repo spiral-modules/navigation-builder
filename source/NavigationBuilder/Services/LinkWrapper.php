@@ -12,10 +12,14 @@ class LinkWrapper
      */
     public function wrapLink(Link $link): array
     {
-        $output = $link->getFields();
-        $output['attributes'] = $link->getAttributes();
-
-        return $output;
+        return [
+            'id'         => $link->primaryKey(),
+            'text'       => $link->text,
+            'href'       => $link->href,
+            'attributes' => $link->getAttributes(),
+            'domains'    => $link->count_domains,
+            'usages'     => $link->count_usages
+        ];
     }
 
     /**

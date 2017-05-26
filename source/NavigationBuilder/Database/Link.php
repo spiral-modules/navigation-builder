@@ -13,6 +13,8 @@ use Spiral\ORM\Record;
  * @property string               $href
  * @property string               $name
  * @property string               $attributes
+ * @property int                  $count_domains
+ * @property int                  $count_usages
  * @property HasManyRelation|Tree $tree
  * @property HasManyRelation|Tree $childrenTree
  */

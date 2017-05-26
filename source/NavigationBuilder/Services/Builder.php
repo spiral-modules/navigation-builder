@@ -77,18 +77,7 @@ class Builder
         $this->createTree($domain, $data, 1);
         $this->domains->rebuild($domain);
 
-//todo, done, but need to count domains also
-//        $query = $this->linkSource->findWithTree()->where([
-//            'id' => ['IN' => new Parameter($links->getKeys())]
-//        ])->compiledQuery();
-//        $links = $query->columns(['link.id', 'count(*) as count_usages'])->groupBy('link.id');
-//        foreach ($links as $item) {
-//            $link = $this->stack->getLink($item['id']);
-//            if (!empty($link)) {
-//                $link->count_usages = $item['count_usages'];
-//                $link->save();
-//            }
-//        }
+        $this->calculateCounters($links->getKeys());
     }
 
     /**
@@ -158,6 +147,45 @@ class Builder
             }
 
             $order++;
+        }
+    }
+
+    /**
+     * Calculate link counters.
+     *
+     * @param array $keys
+     */
+    private function calculateCounters(array $keys)
+    {
+        /** @var SelectQuery $query */
+        $query = $this->linkSource->findWithTree()->where([
+            'id' => ['IN' => new Parameter($keys)]
+        ])->compiledQuery();
+
+        $links = $query
+            ->columns(['link.id', 'trees.domain', 'count(*) as count'])
+            ->groupBy('link.id, trees.domain');
+
+        $data = [];
+        foreach ($links as $item) {
+            if (!isset($data[$item['id']])) {
+                $data[$item['id']] = [
+                    'domains' => [$item['domain']],
+                    'count'   => $item['count']
+                ];
+            } else {
+                $data[$item['id']]['domains'][] = $item['domain'];
+                $data[$item['id']]['count'] += $item['count'];
+            }
+        }
+
+        foreach ($data as $id => $item) {
+            $link = $this->stack->getLink($id);
+            if (!empty($link)) {
+                $link->count_domains = count($item['domains']);
+                $link->count_usages = count($item['count']);
+                $link->save();
+            }
         }
     }
 }
