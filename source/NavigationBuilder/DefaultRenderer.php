@@ -8,10 +8,10 @@ use Spiral\Views\ViewManager;
 class DefaultRenderer extends Service implements RendererInterface
 {
     /** @var ViewManager */
-    private $views;
+    protected $views;
 
     /** @var Config */
-    private $config;
+    protected $config;
 
     /**
      * Renderer constructor.
@@ -44,6 +44,11 @@ class DefaultRenderer extends Service implements RendererInterface
      */
     public function navigation(array $navigation): string
     {
-        return $this->views->render($this->config->navigationView(), compact('navigation'));
+        $output = [];
+        foreach ($navigation as $item) {
+            $output[] = $this->link($item['link']) . $this->navigation($item['sub']);
+        }
+
+        return $this->views->render($this->config->treeView(), ['navigation' => $output]);
     }
 }

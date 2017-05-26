@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'navigation' => 'tree',
-    'link'       => 'link',
-    'domains'    => ['default']
+    'tree'    => 'navigation:tree',
+    'link'    => 'navigation:link',
+    'domains' => ['default']
 ];

@@ -6,15 +6,15 @@ use Spiral\Core\InjectableConfig;
 
 class Config extends InjectableConfig
 {
-    const CONFIG = 'nav-builder';
+    const CONFIG = 'modules/nav-builder';
 
     /**
      * {@inheritdoc}
      */
     protected $config = [
-        'navigation' => 'tree',
-        'link'       => 'link',
-        'domains'    => ['default']
+        'tree'    => 'navigation:tree',
+        'link'    => 'navigation:link',
+        'domains' => ['default']
     ];
 
     /**
@@ -32,7 +32,7 @@ class Config extends InjectableConfig
      *
      * @return string
      */
-    public function navigationView(): string
+    public function treeView(): string
     {
         return $this->config['navigation'];
     }
