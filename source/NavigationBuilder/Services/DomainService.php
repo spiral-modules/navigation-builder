@@ -27,7 +27,7 @@ class DomainService extends Service
     public function domainExists(string $domain): bool
     {
         foreach ($this->config->domains() as $item) {
-            if (strcasecmp($item, $domain)) {
+            if (strcasecmp($item, $domain) === 0) {
                 return true;
             }
         }
