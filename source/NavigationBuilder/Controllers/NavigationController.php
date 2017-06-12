@@ -6,7 +6,7 @@ use Spiral\Core\Controller;
 use Spiral\Core\Traits\AuthorizesTrait;
 use Spiral\Http\Request\InputManager;
 use Spiral\Http\Response\ResponseWrapper;
-use Spiral\NavigationBuilder\Config;
+use Spiral\NavigationBuilder\NavigationBuilderConfig;
 use Spiral\NavigationBuilder\Database\Link;
 use Spiral\NavigationBuilder\Database\Sources\LinkSource;
 use Spiral\NavigationBuilder\Database\Sources\TreeSource;
@@ -37,10 +37,10 @@ class NavigationController extends Controller
     /**
      * Builder view page.
      *
-     * @param Config $config
+     * @param NavigationBuilderConfig $config
      * @return string
      */
-    public function indexAction(Config $config)
+    public function indexAction(NavigationBuilderConfig $config)
     {
         return $this->views->render('navigation:vault/list', [
             'domains' => $config->domains()

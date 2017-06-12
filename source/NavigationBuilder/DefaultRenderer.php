@@ -10,16 +10,16 @@ class DefaultRenderer extends Service implements RendererInterface
     /** @var ViewManager */
     protected $views;
 
-    /** @var Config */
+    /** @var NavigationBuilderConfig */
     protected $config;
 
     /**
      * Renderer constructor.
      *
-     * @param ViewManager $views
-     * @param Config      $config
+     * @param ViewManager             $views
+     * @param NavigationBuilderConfig $config
      */
-    public function __construct(ViewManager $views, Config $config)
+    public function __construct(ViewManager $views, NavigationBuilderConfig $config)
     {
         $this->views = $views;
         $this->config = $config;

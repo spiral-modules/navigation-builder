@@ -6,7 +6,7 @@ use Spiral\Core\DirectoriesInterface;
 use Spiral\Modules\ModuleInterface;
 use Spiral\Modules\PublisherInterface;
 use Spiral\Modules\RegistratorInterface;
-use Spiral\NavigationBuilder\Config;
+use Spiral\NavigationBuilder\NavigationBuilderConfig;
 
 /**
  * Class PagesModule
@@ -56,7 +56,7 @@ class NavigationBuilderModule implements ModuleInterface
         //Publish config
         $publisher->publish(
             __DIR__ . '/config/config.php',
-            $directories->directory('config') . Config::CONFIG . '.php',
+            $directories->directory('config') . NavigationBuilderConfig::CONFIG . '.php',
             PublisherInterface::FOLLOW
         );
     }

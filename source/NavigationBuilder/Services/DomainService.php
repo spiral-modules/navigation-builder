@@ -3,19 +3,19 @@
 namespace Spiral\NavigationBuilder\Services;
 
 use Spiral\Core\Service;
-use Spiral\NavigationBuilder\Config;
+use Spiral\NavigationBuilder\NavigationBuilderConfig;
 
 class DomainService extends Service
 {
-    /** @var Config  */
+    /** @var NavigationBuilderConfig  */
     private $config;
 
     /**
      * DomainService constructor.
      *
-     * @param Config $config
+     * @param NavigationBuilderConfig $config
      */
-    public function __construct(Config $config)
+    public function __construct(NavigationBuilderConfig $config)
     {
         $this->config = $config;
     }
