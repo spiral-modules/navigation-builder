@@ -19,8 +19,8 @@ class LinkRequest extends RequestFilter
     ];
 
     const SETTERS = [
-        'href'       => 'trim',
-        'text'       => [self::class, 'trimHref'],
+        'text'       => 'trim',
+        'href'       => [self::class, 'trimHref'],
         'attributes' => [self::class, 'trimAttributes'],
     ];
 
