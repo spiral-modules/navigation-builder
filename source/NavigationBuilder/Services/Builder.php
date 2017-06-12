@@ -159,7 +159,7 @@ class Builder
     {
         /** @var SelectQuery $query */
         $query = $this->linkSource->findWithTree()->where([
-            'id' => ['IN' => new Parameter($keys)]
+            'link.id' => ['IN' => new Parameter($keys)]
         ])->compiledQuery();
 
         $links = $query
