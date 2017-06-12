@@ -78,11 +78,9 @@ class NavigationController extends Controller
             ];
         }
 
-        $cache = $this->input->input('no-cache', false) ? false : true;
-
         return [
             'status' => 200,
-            'links'  => $navigation->getTree($id, $cache)
+            'links'  => $navigation->getTree($id, false)
         ];
     }
 
