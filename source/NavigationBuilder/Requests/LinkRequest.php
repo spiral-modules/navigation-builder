@@ -20,25 +20,9 @@ class LinkRequest extends RequestFilter
 
     const SETTERS = [
         'text'       => 'trim',
-        'href'       => [self::class, 'trimHref'],
+        'href'       => 'trim',
         'attributes' => [self::class, 'trimAttributes'],
     ];
-
-    /**
-     * @param string $value
-     * @return string
-     */
-    public static function trimHref(string $value): string
-    {
-        $value = trim($value, ' /');
-        if (stripos($value, 'http://') === 0 || stripos($value, 'https://') === 0) {
-            //absolute path
-            return $value;
-        }
-
-        //relative path
-        return '/' . $value;
-    }
 
     /**
      * @param array $attributes
