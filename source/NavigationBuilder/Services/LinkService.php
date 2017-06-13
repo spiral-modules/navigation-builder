@@ -50,7 +50,7 @@ class LinkService extends Service
 
         /** @var Link $link */
         foreach ($this->source->find() as $link) {
-            $output[$link->primaryKey()] = $this->wrapper->wrapLink($link);
+            $output[(string)$link->primaryKey()] = $this->wrapper->wrapLink($link);
         }
 
         return $output;

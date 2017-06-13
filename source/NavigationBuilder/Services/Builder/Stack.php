@@ -29,7 +29,7 @@ class Stack
      */
     public function addLink(Link $link)
     {
-        $this->links[$link->primaryKey()] = $link;
+        $this->links[(string)$link->primaryKey()] = $link;
     }
 
     /**
@@ -69,7 +69,7 @@ class Stack
      */
     public function addTree(Tree $tree)
     {
-        $this->tree[$tree->primaryKey()] = $tree;
+        $this->tree[(string)$tree->primaryKey()] = $tree;
     }
 
     /**

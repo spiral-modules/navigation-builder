@@ -13,7 +13,7 @@ class LinkWrapper
     public function wrapLink(Link $link): array
     {
         return [
-            'id'         => $link->primaryKey(),
+            'id'         => (string)$link->primaryKey(),
             'text'       => $link->text,
             'href'       => $link->href,
             'attributes' => $link->getAttributes(),
