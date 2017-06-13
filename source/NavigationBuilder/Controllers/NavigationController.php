@@ -291,7 +291,7 @@ class NavigationController extends Controller
 
         return [
             'status' => 200,
-            'links'  => $navigation->getTree($id)
+            'links'  => $navigation->getTree($id, false)
         ];
     }
 }

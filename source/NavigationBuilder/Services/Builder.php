@@ -2,6 +2,7 @@
 
 namespace Spiral\NavigationBuilder\Services;
 
+use Spiral\Database\Builders\SelectQuery;
 use Spiral\Database\Injections\Parameter;
 use Spiral\NavigationBuilder\Database\Sources\LinkSource;
 use Spiral\NavigationBuilder\Database\Sources\TreeSource;
@@ -68,16 +69,30 @@ class Builder
         $this->deleteDomainTree($domain);
 
         //load all links from db
-        $links = new KeysExtractor($data);
-        $this->stack->setLinks($this->linkSource->find([
-            'id' => ['IN' => new Parameter($links->getKeys())]
-        ]));
+        $this->loadStack($data);
 
         //Creates db tree records based on passed tree from builder UI
         $this->createTree($domain, $data, 1);
         $this->navigation->rebuild($domain);
 
-        $this->calculateCounters($links->getKeys());
+        $this->calculateCounters();
+    }
+
+    /**
+     * Load passed links to stack instance. No keys (empty tree) - nothing to load
+     *
+     * @param array $data
+     */
+    private function loadStack(array $data)
+    {
+        $links = new KeysExtractor($data);
+        $keys = $links->getKeys();
+
+        if (count($keys)) {
+            $this->stack->setLinks($this->linkSource->find([
+                'id' => ['IN' => new Parameter($keys)]
+            ]));
+        }
     }
 
     /**
@@ -87,7 +102,7 @@ class Builder
      */
     private function deleteDomainTree(string $domain)
     {
-        $this->orm->table(Tree::class)->delete()->where(compact('domain'));
+        $this->orm->table(Tree::class)->delete()->where(compact('domain'))->run();
     }
 
     /**
@@ -152,17 +167,13 @@ class Builder
 
     /**
      * Calculate link counters.
-     *
-     * @param array $keys
      */
-    private function calculateCounters(array $keys)
+    private function calculateCounters()
     {
-        /** @var SelectQuery $query */
-        $query = $this->linkSource->findWithTree()->where([
-            'link.id' => ['IN' => new Parameter($keys)]
-        ])->compiledQuery();
+        /** @var SelectQuery $request */
+        $request = $this->linkSource->findWithTree()->compiledQuery();
 
-        $links = $query
+        $links = $request
             ->columns(['link.id', 'trees.domain', 'count(*) as count'])
             ->groupBy('link.id, trees.domain');
 
