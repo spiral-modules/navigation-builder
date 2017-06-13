@@ -23,7 +23,7 @@ class Builder
     private $orm;
 
     /** @var Navigation */
-    private $domains;
+    private $navigation;
 
     /** @var Stack */
     private $stack;
@@ -34,18 +34,18 @@ class Builder
      * @param LinkSource $linkSource
      * @param TreeSource $treeSource
      * @param ORM        $orm
-     * @param Navigation $domains
+     * @param Navigation $navigation
      */
     public function __construct(
         LinkSource $linkSource,
         TreeSource $treeSource,
         ORM $orm,
-        Navigation $domains
+        Navigation $navigation
     ) {
         $this->linkSource = $linkSource;
         $this->treeSource = $treeSource;
         $this->orm = $orm;
-        $this->domains = $domains;
+        $this->navigation = $navigation;
 
         $this->stack = new Stack();
     }
@@ -60,7 +60,7 @@ class Builder
     public function saveStructure(string $domain, array $data)
     {
         //data is same, no changes
-        if ($data == $this->domains->getTree($domain, false)) {
+        if ($data == $this->navigation->getTree($domain, false)) {
             return;
         }
 
@@ -75,7 +75,7 @@ class Builder
 
         //Creates db tree records based on passed tree from builder UI
         $this->createTree($domain, $data, 1);
-        $this->domains->rebuild($domain);
+        $this->navigation->rebuild($domain);
 
         $this->calculateCounters($links->getKeys());
     }
