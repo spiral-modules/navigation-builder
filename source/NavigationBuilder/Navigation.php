@@ -49,23 +49,24 @@ class Navigation
         RendererInterface $renderer,
         Storage $storage
     ) {
+        $htmlBuilder = $htmlBuilder->withRenderer($renderer);
+
         $this->treeBuilder = $treeBuilder;
         $this->htmlBuilder = $htmlBuilder;
         $this->structureBuilder = $structureBuilder;
         $this->storage = $storage;
-
-        $this->setRenderer($renderer);
+        $this->renderer = $renderer;
     }
 
     /**
      * @param RendererInterface $renderer
      * @return Navigation
      */
-    public function setRenderer(RendererInterface $renderer): Navigation
+    public function withRenderer(RendererInterface $renderer): Navigation
     {
         $navigation = clone $this;
         $navigation->renderer = $renderer;
-        $navigation->htmlBuilder->setRenderer($renderer);
+        $navigation->htmlBuilder = $navigation->htmlBuilder->withRenderer($renderer);
 
         return $navigation;
     }

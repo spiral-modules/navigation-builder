@@ -29,7 +29,7 @@ class NavigationBootloader extends Bootloader
      */
     public function defaultNavigation(Navigation $navigation, DefaultRenderer $renderer)
     {
-        $navigation->setRenderer($renderer);
+        $navigation->withRenderer($renderer);
 
         return $navigation;
     }
