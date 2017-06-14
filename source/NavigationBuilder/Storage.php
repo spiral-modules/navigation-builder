@@ -11,9 +11,10 @@ use Psr\SimpleCache\CacheInterface;
  */
 class Storage
 {
-    const TREE_CACHE = 'navigation::tree';
-    const HTML_CACHE = 'navigation::html';
-    const LIFETIME   = 86400 * 365 * 10; // 10 years is enough
+    const TREE_CACHE      = 'navigation::tree';
+    const STRUCTURE_CACHE = 'navigation::structure';
+    const HTML_CACHE      = 'navigation::html';
+    const LIFETIME        = 86400 * 365 * 10; // 10 years is enough
 
     /** @var CacheInterface */
     private $cache;
@@ -63,6 +64,28 @@ class Storage
     }
 
     /**
+     * Get domain structure cache. Supposed to be array.
+     *
+     * @param string $domain
+     * @return mixed
+     */
+    public function getStructureCache(string $domain)
+    {
+        return $this->cache->get($this->structureCache($domain), []);
+    }
+
+    /**
+     * Set domain structure cache.
+     *
+     * @param string $domain
+     * @param array  $data
+     */
+    public function setStructureCache(string $domain, array $data)
+    {
+        $this->cache->set($this->structureCache($domain), $data, self::LIFETIME);
+    }
+
+    /**
      * Get domain html cache. Supposed to be string.
      *
      * @param string            $domain
@@ -95,6 +118,17 @@ class Storage
     protected function treeCache(string $domain): string
     {
         return self::TREE_CACHE . '::' . $domain;
+    }
+
+    /**
+     * Tree cache name.
+     *
+     * @param string $domain
+     * @return string
+     */
+    protected function structureCache(string $domain): string
+    {
+        return self::STRUCTURE_CACHE . '::' . $domain;
     }
 
     /**

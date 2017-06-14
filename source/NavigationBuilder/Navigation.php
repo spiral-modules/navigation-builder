@@ -3,6 +3,7 @@
 namespace Spiral\NavigationBuilder;
 
 use Spiral\NavigationBuilder\Builders\HtmlBuilder;
+use Spiral\NavigationBuilder\Builders\StructureBuilder;
 use Spiral\NavigationBuilder\Builders\TreeBuilder;
 
 /**
@@ -23,6 +24,9 @@ class Navigation
     /** @var HtmlBuilder */
     private $htmlBuilder;
 
+    /** @var StructureBuilder */
+    private $structureBuilder;
+
     /** @var RendererInterface */
     private $renderer;
 
@@ -34,17 +38,20 @@ class Navigation
      *
      * @param TreeBuilder       $treeBuilder
      * @param HtmlBuilder       $htmlBuilder
+     * @param StructureBuilder  $structureBuilder
      * @param RendererInterface $renderer
      * @param Storage           $storage
      */
     public function __construct(
         TreeBuilder $treeBuilder,
         HtmlBuilder $htmlBuilder,
+        StructureBuilder $structureBuilder,
         RendererInterface $renderer,
         Storage $storage
     ) {
         $this->treeBuilder = $treeBuilder;
         $this->htmlBuilder = $htmlBuilder;
+        $this->structureBuilder = $structureBuilder;
         $this->storage = $storage;
 
         $this->setRenderer($renderer);
@@ -52,11 +59,15 @@ class Navigation
 
     /**
      * @param RendererInterface $renderer
+     * @return Navigation
      */
-    public function setRenderer(RendererInterface $renderer)
+    public function setRenderer(RendererInterface $renderer): Navigation
     {
-        $this->renderer = $renderer;
-        $this->htmlBuilder->setRenderer($renderer);
+        $navigation = clone $this;
+        $navigation->renderer = $renderer;
+        $navigation->htmlBuilder->setRenderer($renderer);
+
+        return $navigation;
     }
 
     /**
@@ -110,6 +121,25 @@ class Navigation
 
     /**
      * @param string $domain
+     * @param bool   $cache
+     * @return array
+     */
+    public function getStructure(string $domain, bool $cache = true): array
+    {
+        if (empty($cache)) {
+            return $this->structureBuilder->build($domain);
+        }
+
+        $structure = $this->storage->getStructureCache($domain);
+        if (empty($structure)) {
+            $structure = $this->buildAndCacheTree($domain);
+        }
+
+        return $structure;
+    }
+
+    /**
+     * @param string $domain
      * @return array
      */
     protected function buildAndCacheTree(string $domain): array
@@ -118,6 +148,18 @@ class Navigation
         $this->storage->setTreeCache($domain, $tree);
 
         return $tree;
+    }
+
+    /**
+     * @param string $domain
+     * @return array
+     */
+    protected function buildAndCacheStructure(string $domain): array
+    {
+        $structure = $this->structureBuilder->build($domain);
+        $this->storage->setStructureCache($domain, $structure);
+
+        return $structure;
     }
 
     /**
