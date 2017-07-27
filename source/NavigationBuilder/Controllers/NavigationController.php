@@ -38,6 +38,7 @@ class NavigationController extends Controller
      * Builder view page.
      *
      * @param NavigationBuilderConfig $config
+     *
      * @return string
      */
     public function indexAction(NavigationBuilderConfig $config)
@@ -51,6 +52,7 @@ class NavigationController extends Controller
      * Return all links list.
      *
      * @param LinkService $service
+     *
      * @return array
      */
     public function getLinksAction(LinkService $service)
@@ -67,6 +69,7 @@ class NavigationController extends Controller
      * @param string|int    $id
      * @param Navigation    $navigation
      * @param DomainService $service
+     *
      * @return array
      */
     public function domainTreeAction($id, Navigation $navigation, DomainService $service)
@@ -90,6 +93,7 @@ class NavigationController extends Controller
      * @param LinkRequest $request
      * @param LinkWrapper $wrapper
      * @param LinkSource  $source
+     *
      * @return array
      */
     public function createLinkAction(LinkRequest $request, LinkWrapper $wrapper, LinkSource $source)
@@ -117,6 +121,7 @@ class NavigationController extends Controller
      * @param string|int  $id
      * @param LinkSource  $source
      * @param LinkService $service
+     *
      * @return array
      */
     public function deleteLinkAction($id, LinkSource $source, LinkService $service)
@@ -154,13 +159,16 @@ class NavigationController extends Controller
      * @param LinkSource  $source
      * @param LinkRequest $request
      * @param LinkWrapper $wrapper
+     * @param Navigation  $navigation
+     *
      * @return array
      */
     public function updateLinkAction(
         $id,
         LinkSource $source,
         LinkRequest $request,
-        LinkWrapper $wrapper
+        LinkWrapper $wrapper,
+        Navigation $navigation
     ) {
         $this->allows('update');
 
@@ -184,6 +192,11 @@ class NavigationController extends Controller
         $link->setAttributes($request->getAttributes());
         $link->save();
 
+        /** @var Tree $tree */
+        foreach ($link->tree as $tree) {
+            $navigation->rebuild($tree->domain);
+        }
+
         return [
             'status' => 200,
             'link'   => $wrapper->wrapLink($link)
@@ -197,6 +210,7 @@ class NavigationController extends Controller
      * @param LinkSource  $source
      * @param LinkWrapper $wrapper
      * @param LinkService $service
+     *
      * @return array
      */
     public function copyLinkAction(
@@ -229,6 +243,7 @@ class NavigationController extends Controller
      *
      * @param string|int $id
      * @param TreeSource $source
+     *
      * @return array
      */
     public function updateTreeStatusAction($id, TreeSource $source)
@@ -270,6 +285,7 @@ class NavigationController extends Controller
      * @param Builder       $builder
      * @param Navigation    $navigation
      * @param DomainService $service
+     *
      * @return array
      */
     public function saveAction(
